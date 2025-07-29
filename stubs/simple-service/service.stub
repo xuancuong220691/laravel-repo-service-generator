@@ -1,0 +1,15 @@
+<?php
+
+namespace App\Services;
+
+use App\Services\Contracts\{{name}}ServiceInterface;
+
+class {{name}}Service implements {{name}}ServiceInterface
+{
+
+    public function __construct()
+    {
+        //
+    }
+
+}

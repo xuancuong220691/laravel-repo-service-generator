@@ -1,0 +1,244 @@
+<?php
+
+namespace App\Repositories\Eloquent;
+
+use App\Repositories\Contracts\BaseRepositoryInterface;
+
+abstract class BaseRepository implements BaseRepositoryInterface
+{
+    protected $model;
+
+    public function getAll(array $relations = [])
+    {
+        $query = $this->model;
+
+        if (!empty($relations)) {
+            $query = $query->with($relations);
+        }
+
+        return $query->get();
+    }
+
+    public function get(?array $fields = null, array $relations = [])
+    {
+        $query = $this->model->select($this->normalizeFields($fields));
+
+        if (!empty($relations)) {
+            $query = $query->with($relations);
+        }
+
+        return $query->get();
+    }
+
+    public function find($id, ?array $fields = null, array $relations = [])
+    {
+        $query = $this->model->select($this->normalizeFields($fields));
+
+        if (!empty($relations)) {
+            $query = $query->with($relations);
+        }
+
+        return $query->find($id);
+    }
+
+    public function findBy(string $key, $value, ?array $fields = null, array $relations = [])
+    {
+        $query = $this->model->where($key, $value)->select($this->normalizeFields($fields));
+
+        if (!empty($relations)) {
+            $query = $query->with($relations);
+        }
+
+        return $query->first();
+    }
+
+    public function findByAttributes(array $conditions, ?array $fields = null, array $relations = [])
+    {
+        $query = $this->applyConditions($this->model, $conditions);
+
+        if (!empty($relations)) {
+            $query = $query->with($relations);
+        }
+
+        return $query->select($this->normalizeFields($fields))->first();
+    }
+
+    public function getBy(string $key, $value, ?array $fields = null, array $relations = [])
+    {
+        $query = $this->model->select($this->normalizeFields($fields))->where($key, $value);
+
+        if (!empty($relations)) {
+            $query = $query->with($relations);
+        }
+
+        return $query->get();
+    }
+
+    public function getByAttributes(array $conditions, ?array $fields = null, array $relations = [])
+    {
+        $query = $this->applyConditions($this->model, $conditions);
+
+        if (!empty($relations)) {
+            $query = $query->with($relations);
+        }
+
+        return $query->select($this->normalizeFields($fields))->get();
+    }
+
+    public function existsBy(string $field, $value): bool
+    {
+        return $this->model->where($field, $value)->exists();
+    }
+
+    public function existsByAttributes(array $conditions): bool
+    {
+        $query = $this->applyConditions($this->model, $conditions);
+        return $query->exists();
+    }
+
+    public function paginate(int $perPage = 15, array $conditions = [], ?array $fields = null, array $relations = [])
+    {
+        $query = $this->applyConditions($this->model, $conditions);
+
+        if (!empty($relations)) {
+            $query = $query->with($relations);
+        }
+
+        return $query->select($this->normalizeFields($fields))->paginate($perPage);
+    }
+
+    public function create(array $data)
+    {
+        return $this->model->create($data);
+    }
+
+    public function update($id, array $data)
+    {
+        $item = $this->find($id);
+        return $item && $item->update($data) ? $item : false;
+    }
+
+    public function updateFields($model, array $fields, array $except = []): mixed
+    {
+        $fillable = $model->getFillable();
+        $before = clone $model;
+
+        foreach ($fields as $key => $value) {
+            if (in_array($key, $fillable) && !in_array($key, $except)) {
+                $model->{$key} = $value;
+            }
+        }
+
+        $dirtyFields = $model->getDirty();
+
+        try {
+            $success = $model->save();
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+
+        return [
+            'success' => $success,
+            'model' => $model,
+            'changed' => $dirtyFields,
+            'old' => $before->only(array_keys($dirtyFields)),
+        ];
+    }
+
+    /**
+     * Create or update a model with given attributes and values.
+     *
+     * @param  array  $attributes
+     * @param  array  $values
+     * @param  array|null  $checkFields
+     * @return array [Model $model, bool $wasCreated, bool $wasUpdated, array $changedFields]
+     */
+    public function createOrUpdate(array $attributes, array $values = [], ?array $checkFields = null): array
+    {
+        $model = $this->model->firstOrNew($attributes);
+        $wasRecentlyCreated = !$model->exists;
+
+        $model->fill($values);
+
+        $dirty = $model->getDirty();
+
+        $importantChanges = ($checkFields !== null && !empty($checkFields))
+            ? array_intersect_key($dirty, array_flip($checkFields))
+            : $dirty;
+
+        $wasUpdated = !$wasRecentlyCreated && !empty($importantChanges);
+
+        if ($wasRecentlyCreated || $wasUpdated) {
+            $model->save();
+        }
+
+        return [$model, $wasRecentlyCreated, $wasUpdated, $importantChanges];
+    }
+
+    public function delete($id)
+    {
+        $item = $this->find($id);
+        return $item ? $item->delete() : false;
+    }
+
+    public function deleteBy(array $conditions): int
+    {
+        return $this->model->where($conditions)->delete();
+    }
+
+    public function withTrashed(array $conditions = [], ?array $fields = null, array $relations = [])
+    {
+        $query = $this->applyConditions($this->model->withTrashed(), $conditions);
+
+        if (!empty($relations)) {
+            $query = $query->with($relations);
+        }
+
+        return $query->select($this->normalizeFields($fields))->get();
+    }
+
+    public function onlyTrashed(array $conditions = [], ?array $fields = null, array $relations = [])
+    {
+        $query = $this->applyConditions($this->model->onlyTrashed(), $conditions);
+
+        if (!empty($relations)) {
+            $query = $query->with($relations);
+        }
+
+        return $query->select($this->normalizeFields($fields))->get();
+    }
+
+    public function restore($id): bool
+    {
+        $item = $this->model->withTrashed()->find($id);
+        return $item ? $item->restore() : false;
+    }
+
+    public function forceDelete($id): bool
+    {
+        $item = $this->model->withTrashed()->find($id);
+        return $item ? $item->forceDelete() : false;
+    }
+
+
+    protected function applyConditions($query, array $conditions)
+    {
+        foreach ($conditions as $key => $value) {
+            if (is_array($value) && isset($value['$elemMatch'])) {
+                $query = $query->where($key, 'elemMatch', $value['$elemMatch']);
+            } else {
+                $query = $query->where($key, $value);
+            }
+        }
+
+        return $query;
+    }
+
+    protected function normalizeFields(?array $fields): array
+    {
+        return is_null($fields) ? ['*'] : $fields;
+    }
+}

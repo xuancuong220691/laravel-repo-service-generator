@@ -52,7 +52,7 @@ This library provides a powerful artisan command set to generate and manage Repo
 <h2 id="installation">⚙️ Installation</h2>
 
 ```bash
-composer require cuongnx/laravel-repo-service
+composer require cuongnx/laravel-repo-service-generator
 ```
 
 > 📦 For MongoDB support:

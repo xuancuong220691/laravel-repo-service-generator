@@ -109,6 +109,7 @@ app/
 ---
 
 <h2 id="create-full-structure-model--repo--service">🧱 Create Full Structure (Model + Repo + Service)</h2>
+
 ```bash
 php artisan cuongnx:make-struct Post
 ```
@@ -251,6 +252,8 @@ Or directly:
 
 ```bash
 php artisan cuongnx:unbind-repo User
+```
+```bash
 php artisan cuongnx:unbind-service User
 ```
 

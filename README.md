@@ -1,0 +1,1 @@
+# laravel-repo-service-generator

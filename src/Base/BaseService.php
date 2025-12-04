@@ -49,27 +49,27 @@ abstract class BaseService implements BaseServiceInterface
         return $this->getRepository()->pluck($column, $key, $conditions);
     }
 
-    public function countBy(array $conditions = [])
+    public function countBy(array $conditions = []): int
     {
         return $this->getRepository()->countBy($conditions);
     }
 
-    public function sum(string $column, array $conditions = [])
+    public function sum(string $column, array $conditions = []) : float|int
     {
         return $this->getRepository()->sum($column, $conditions);
     }
 
-    public function avg(string $column, array $conditions = [])
+    public function avg(string $column, array $conditions = []) : ?float
     {
         return $this->getRepository()->avg($column, $conditions);
     }
 
-    public function max(string $column, array $conditions = [])
+    public function max(string $column, array $conditions = []) : float|int|null
     {
         return $this->getRepository()->max($column, $conditions);
     }
 
-    public function min(string $column, array $conditions = [])
+    public function min(string $column, array $conditions = []) : float|int|null
     {
         return $this->getRepository()->min($column, $conditions);
     }
@@ -119,12 +119,12 @@ abstract class BaseService implements BaseServiceInterface
         return $this->getRepository()->update($id, $data);
     }
 
-    public function updateFields($model, array $fields, array $except = [])
+    public function updateFields($model, array $fields, array $except = []) : mixed
     {
         return $this->getRepository()->updateFields($model, $fields, $except);
     }
 
-    public function createOrUpdate(array $attributes, array $values = [], array $checkFields = [])
+    public function createOrUpdate(array $attributes, array $values = [], array|null $checkFields = null): array
     {
         return $this->getRepository()->createOrUpdate($attributes, $values, $checkFields);
     }

@@ -10,7 +10,7 @@ interface BaseRepositoryInterface
     public function getByAttributes(array $conditions, array|null $fields = null, array $relations = [], array|string|null $orderBy = null);
     public function find($id, array|null $fields = null, array $relations = [], array|string|null $orderBy = null);
     public function findBy(string $key, $value, array|null $fields = null, array $relations = [], array|string|null $orderBy = null);
-    public function findOneByAttributes(array $conditions, array|null $fields = null, array $relations = [], array|string|null $orderBy = null);
+    public function findByAttributes(array $conditions, array|null $fields = null, array $relations = [], array|string|null $orderBy = null);
     public function pluck(string $column, ?string $key = null, array $conditions = []);
     public function countBy(array $conditions = []): int;
     public function sum(string $column, array $conditions = []): float|int;

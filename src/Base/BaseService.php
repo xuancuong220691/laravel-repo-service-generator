@@ -41,7 +41,7 @@ abstract class BaseService implements BaseServiceInterface
 
     public function findByAttributes(array $conditions, ?array $fields = null, array $relations = [], array|string|null $orderBy = null)
     {
-        return $this->getRepository()->findOneByAttributes($conditions, $fields, $relations, $orderBy);
+        return $this->getRepository()->findByAttributes($conditions, $fields, $relations, $orderBy);
     }
 
     public function pluck(string $column, ?string $key = null, array $conditions = [])

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Repositories\Contracts\{{model}}RepositoryInterface;
 use App\Services\Contracts\{{model}}ServiceInterface;
+use CuongNX\RepoServiceGenerator\Base\BaseService;
 
 class {{model}}Service extends BaseService implements {{model}}ServiceInterface
 {

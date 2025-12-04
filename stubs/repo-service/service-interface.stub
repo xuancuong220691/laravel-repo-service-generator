@@ -2,7 +2,7 @@
 
 namespace App\Services\Contracts;
 
-use App\Services\Contracts\BaseServiceInterface;
+use CuongNX\RepoServiceGenerator\Base\Contracts\BaseServiceInterface;
 
 interface {{model}}ServiceInterface extends BaseServiceInterface
 {

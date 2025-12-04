@@ -29,7 +29,7 @@ class MakeStructureCommand extends Command
         $force = $this->option('f') || $this->option('force');
         $bind  = !$this->option('no-bind');
         $createModel = $this->option('m') || $this->option('model');
-        $modelType = $this->option('t') ?? $this->option('type');
+        $modelType = $this->option('t') || $this->option('type');
 
         if ($createModel) {
             $this->createModel($model, $modelType, $force);

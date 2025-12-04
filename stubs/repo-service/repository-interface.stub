@@ -2,6 +2,8 @@
 
 namespace App\Repositories\Contracts;
 
+use CuongNX\RepoServiceGenerator\Base\Contracts\BaseRepositoryInterface;
+
 interface {{model}}RepositoryInterface extends BaseRepositoryInterface
 {
     //

@@ -248,6 +248,45 @@ abstract class BaseRepository implements BaseRepositoryInterface
         ];
     }
 
+    // Các hàm mới được thêm dựa trên Eloquent methods
+    /**
+     * Tìm bản ghi đầu tiên khớp với điều kiện, nếu không tồn tại thì tạo mới.
+     *
+     * @param array $attributes Điều kiện tìm kiếm (ví dụ: ['email' => 'example@email.com'])
+     * @param array $values Giá trị bổ sung khi tạo mới (tùy chọn)
+     * @param array $relations Các relations cần eager load (with)
+     * @return Model Bản ghi tìm thấy hoặc tạo mới
+     */
+    public function firstOrCreate(array $attributes, array $values = [], array $relations = [])
+    {
+        $query = $this->model;
+
+        if (!empty($relations)) {
+            $query = $query->with($relations);
+        }
+
+        return $query->firstOrCreate($attributes, $values);
+    }
+
+        /**
+     * Tìm bản ghi đầu tiên khớp với điều kiện, nếu không tồn tại thì trả về instance mới (không lưu).
+     *
+     * @param array $attributes Điều kiện tìm kiếm
+     * @param array $values Giá trị bổ sung cho instance mới
+     * @param array $relations Các relations cần eager load (with)
+     * @return Model Bản ghi tìm thấy hoặc instance mới
+     */
+    public function firstOrNew(array $attributes, array $values = [], array $relations = [])
+    {
+        $query = $this->model;
+
+        if (!empty($relations)) {
+            $query = $query->with($relations);
+        }
+
+        return $query->firstOrNew($attributes, $values);
+    }
+
     /**
      * Create or update a model with given attributes and values.
      *
@@ -276,6 +315,25 @@ abstract class BaseRepository implements BaseRepositoryInterface
         }
 
         return [$model, $wasRecentlyCreated, $wasUpdated, $importantChanges];
+    }
+
+    /**
+     * Tìm bản ghi đầu tiên khớp với điều kiện, nếu tồn tại thì cập nhật, không thì tạo mới.
+     *
+     * @param array $attributes Điều kiện tìm kiếm
+     * @param array $values Giá trị để cập nhật hoặc tạo mới
+     * @param array $relations Các relations cần eager load (with)
+     * @return Model Bản ghi đã cập nhật hoặc tạo mới
+     */
+    public function updateOrCreate(array $attributes, array $values = [], array $relations = [])
+    {
+        $query = $this->model;
+
+        if (!empty($relations)) {
+            $query = $query->with($relations);
+        }
+
+        return $query->updateOrCreate($attributes, $values);
     }
 
     public function delete($id)

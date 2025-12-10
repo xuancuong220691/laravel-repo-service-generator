@@ -27,7 +27,10 @@ interface BaseRepositoryInterface
     public function create(array $data);
     public function update($id, array $data);
     public function updateFields($model, array $fields, array $except = []): mixed;
+    public function firstOrCreate(array $attributes, array $values = [], array $relations = []);
+    public function firstOrNew(array $attributes, array $values = [], array $relations = []);
     public function createOrUpdate(array $attributes, array $values = [], array|null $checkFields = null): array;
+    public function updateOrCreate(array $attributes, array $values = [], array $relations = []);
     public function delete($id);
     public function deleteBy(array $conditions): int;
     public function withTrashed(array $conditions = [], array|null $fields = null, array $relations = []);

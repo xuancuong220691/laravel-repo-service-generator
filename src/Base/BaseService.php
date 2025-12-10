@@ -124,9 +124,24 @@ abstract class BaseService implements BaseServiceInterface
         return $this->getRepository()->updateFields($model, $fields, $except);
     }
 
+    public function firstOrCreate(array $attributes, array $values = [], array $relations = [])
+    {
+        return $this->getRepository()->firstOrCreate($attributes, $values, $relations);
+    }
+
+    public function firstOrNew(array $attributes, array $values = [], array $relations = [])
+    {
+        return $this->getRepository()->firstOrNew($attributes, $values, $relations);
+    }
+
     public function createOrUpdate(array $attributes, array $values = [], array|null $checkFields = null): array
     {
         return $this->getRepository()->createOrUpdate($attributes, $values, $checkFields);
+    }
+
+    public function updateOrCreate(array $attributes, array $values = [], array $relations = [])
+    {
+        return $this->getRepository()->updateOrCreate($attributes, $values, $relations);
     }
 
     public function delete($id)

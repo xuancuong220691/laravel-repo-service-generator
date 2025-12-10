@@ -255,7 +255,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
      * @param array $attributes Điều kiện tìm kiếm (ví dụ: ['email' => 'example@email.com'])
      * @param array $values Giá trị bổ sung khi tạo mới (tùy chọn)
      * @param array $relations Các relations cần eager load (with)
-     * @return Model Bản ghi tìm thấy hoặc tạo mới
+     *@return array [Model $model, bool $wasCreated]
      */
     public function firstOrCreate(array $attributes, array $values = [], array $relations = [])
     {
@@ -265,7 +265,10 @@ abstract class BaseRepository implements BaseRepositoryInterface
             $query = $query->with($relations);
         }
 
-        return $query->firstOrCreate($attributes, $values);
+        $model = $query->firstOrCreate($attributes, $values);
+        $wasCreated = $model->wasRecentlyCreated;
+
+        return [$model, $wasCreated];
     }
 
         /**
@@ -274,7 +277,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
      * @param array $attributes Điều kiện tìm kiếm
      * @param array $values Giá trị bổ sung cho instance mới
      * @param array $relations Các relations cần eager load (with)
-     * @return Model Bản ghi tìm thấy hoặc instance mới
+     * @return array [Model $model, bool $isNew]
      */
     public function firstOrNew(array $attributes, array $values = [], array $relations = [])
     {
@@ -284,7 +287,10 @@ abstract class BaseRepository implements BaseRepositoryInterface
             $query = $query->with($relations);
         }
 
-        return $query->firstOrNew($attributes, $values);
+        $model = $query->firstOrNew($attributes, $values);
+        $isNew = !$model->exists;
+
+        return [$model, $isNew];
     }
 
     /**
@@ -323,7 +329,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
      * @param array $attributes Điều kiện tìm kiếm
      * @param array $values Giá trị để cập nhật hoặc tạo mới
      * @param array $relations Các relations cần eager load (with)
-     * @return Model Bản ghi đã cập nhật hoặc tạo mới
+     * @return array [Model $model, bool $wasCreated]
      */
     public function updateOrCreate(array $attributes, array $values = [], array $relations = [])
     {
@@ -333,7 +339,10 @@ abstract class BaseRepository implements BaseRepositoryInterface
             $query = $query->with($relations);
         }
 
-        return $query->updateOrCreate($attributes, $values);
+        $model = $query->updateOrCreate($attributes, $values);
+        $wasCreated = $model->wasRecentlyCreated;
+
+        return [$model, $wasCreated];
     }
 
     public function delete($id)

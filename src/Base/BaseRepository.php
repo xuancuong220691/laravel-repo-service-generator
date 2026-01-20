@@ -271,7 +271,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
         return [$model, $wasCreated];
     }
 
-        /**
+    /**
      * Tìm bản ghi đầu tiên khớp với điều kiện, nếu không tồn tại thì trả về instance mới (không lưu).
      *
      * @param array $attributes Điều kiện tìm kiếm
@@ -393,12 +393,83 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     protected function applyConditions($query, array $conditions)
     {
-        foreach ($conditions as $key => $value) {
-            if (is_array($value) && isset($value['$elemMatch'])) {
-                $query = $query->where($key, 'elemMatch', $value['$elemMatch']);
-            } else {
-                $query = $query->where($key, $value);
+        foreach ($conditions as $field => $condition) {
+            if (!is_array($condition)) {
+                $query->where($field, $condition);
+                continue;
             }
+
+            // MongoDB $elemMatch
+            if (isset($condition['$elemMatch'])) {
+                $query->where($field, 'elemMatch', $condition['$elemMatch']);
+                continue;
+            }
+
+            // MongoDB operators
+            if (
+                isset($condition['$gte']) || isset($condition['$gt']) ||
+                isset($condition['$lte']) || isset($condition['$lt']) ||
+                isset($condition['$ne'])
+            ) {
+
+                foreach ($condition as $operator => $value) {
+                    $query->where($field, $operator, $value);
+                }
+                continue;
+            }
+
+            // 🆕 BETWEEN syntax with min/max
+            if (isset($condition['min']) && isset($condition['max'])) {
+                $query->where($field, '>=', $condition['min']);
+                $query->where($field, '<=', $condition['max']);
+                continue;
+            }
+
+            // 🆕 BETWEEN syntax with from/to
+            if (isset($condition['from']) && isset($condition['to'])) {
+                $query->where($field, '>=', $condition['from']);
+                $query->where($field, '<=', $condition['to']);
+                continue;
+            }
+
+            // Indexed array
+            if (isset($condition[0])) {
+                $operator = $condition[0];
+                $value = $condition[1] ?? null;
+
+                switch (strtolower($operator)) {
+                    case 'in':
+                        $query->whereIn($field, $value);
+                        break;
+                    case 'not_in':
+                    case 'notin':
+                        $query->whereNotIn($field, $value);
+                        break;
+                    case 'between':
+                        // $value is array [min, max]
+                        if (is_array($value) && count($value) === 2) {
+                            $query->where($field, '>=', $value[0]);
+                            $query->where($field, '<=', $value[1]);
+                        }
+                        break;
+                    case 'not_between':
+                    case 'notbetween':
+                        $query->whereNotBetween($field, $value);
+                        break;
+                    case 'null':
+                        $query->whereNull($field);
+                        break;
+                    case 'not_null':
+                    case 'notnull':
+                        $query->whereNotNull($field);
+                        break;
+                    default:
+                        $query->where($field, $operator, $value);
+                }
+                continue;
+            }
+
+            $query->where($field, $condition);
         }
 
         return $query;

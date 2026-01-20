@@ -22,18 +22,16 @@ This library provides a powerful artisan command set to generate and manage Repo
 
 - [Features](#features)
 - [Installation](#installation)
-- [Base Structure Generation](#base-structure-generation)
 - [Full Structure Generation](#create-full-structure-model--repo--service)
 - [Create Simple Service](#create-simple-service-interface)
 - [Bindings](#bindings)
 - [Unbind](#unbind-bindings)
 - [Remove Structures](#remove-structures)
+- [BaseRepository Methods](#baserepository-methods)
 - [BaseService Methods](#baseservice-methods)
-- [Service Usage](#service-usage-example)
+- [Advanced Query Conditions](#advanced-query-conditions)
 - [Folder Structure](#folder-structure)
-- [Donate](#donate)
-- [Contact](#contact)
-- [License](#license)
+
 
 ---
 
@@ -60,51 +58,6 @@ composer require cuongnx/laravel-repo-service-generator
 ```bash
 composer require mongodb/laravel-mongodb
 ```
-
----
-
-<h2 id="base-structure-generation">📦 Base Structure Generation</h2>
-
-Create base repository/service interfaces and classes:
-
-```bash
-php artisan cuongnx:make-base
-```
-
-### Options:
-
-| Flag      | Description              |
-| --------- | ------------------------ |
-| `--f`     | Overwrite existing files |
-| `--force` | Alias for `--f`          |
-
-This command will generate the following files and structure:
-
-```
-app/
-├── Repositories/
-│   ├── Contracts/
-│   │   └── BaseRepositoryInterface.php
-│   └── BaseRepository.php
-└── Services/
-    ├── Contracts/
-    │   └── BaseServiceInterface.php
-    └── BaseService.php
-```
-
-### File Descriptions:
-
-- `app/Repositories/Contracts/BaseRepositoryInterface.php`  
-  → Interface that defines common methods for a repository.
-
-- `app/Repositories/Eloquent/BaseRepository.php`  
-  → Implements basic data access methods (CRUD, conditions, pagination...).
-
-- `app/Services/Contracts/BaseServiceInterface.php`  
-  → Interface that defines common methods for a service layer.
-
-- `app/Services/BaseService.php`  
-  → Implements business logic on top of the repository layer.
 
 ---
 
@@ -281,28 +234,49 @@ php artisan cuongnx:remove-service Post
 
 ---
 
-<h2 id="baseservice-methods">🧩 BaseService Methods</h2>
-All services extend `BaseService` and automatically gain access to these common data methods.
+<h2 id="baserepository-methods">🗄️ BaseRepository Methods</h2>
+
+All repositories extend `BaseRepository` and automatically gain access to these common data methods.
 
 ### 🔍 Read Methods
 
 | Method | Description |
 |--------|-------------|
-| `getAll(array $relations = [])` | Get all records with optional relationships |
-| `get(?array $fields = null, array $relations = [])` | Get all records with selected fields & relationships |
-| `find($id, ?array $fields = null, array $relations = [])` | Find by ID |
-| `findBy(string $key, $value, ?array $fields = null, array $relations = [])` | Find a record by key-value |
-| `findByAttributes(array $conditions, ?array $fields = null, array $relations = [])` | Find a single record by multiple attributes |
-| `getBy(string $key, $value, ?array $fields = null, array $relations = [])` | Get multiple records by key-value |
-| `getByAttributes(array $conditions, ?array $fields = null, array $relations = [])` | Get multiple records by attributes |
-| `withTrashed(array $conditions = [], ?array $fields = null, array $relations = [])` | Get including soft-deleted |
-| `onlyTrashed(array $conditions = [], ?array $fields = null, array $relations = [])` | Get only soft-deleted |
+| `getAll(array $relations = [], array\|string\|null $orderBy = null)` | Get all records with optional relationships and ordering |
+| `get(?array $fields = null, array $relations = [], array\|string\|null $orderBy = null)` | Get all records with selected fields, relationships, and ordering |
+| `find($id, ?array $fields = null, array $relations = [])` | Find by ID with optional field selection and relationships |
+| `findBy(string $key, $value, ?array $fields = null, array $relations = [], array\|string\|null $orderBy = null)` | Find a single record by key-value |
+| `findByAttributes(array $conditions, ?array $fields = null, array $relations = [], array\|string\|null $orderBy = null)` | Find a single record by multiple attributes |
+| `getBy(string $key, $value, ?array $fields = null, array $relations = [], array\|string\|null $orderBy = null)` | Get multiple records by key-value |
+| `getByAttributes(array $conditions, ?array $fields = null, array $relations = [], array\|string\|null $orderBy = null)` | Get multiple records by attributes |
+| `withTrashed(array $conditions = [], ?array $fields = null, array $relations = [])` | Get including soft-deleted records |
+| `onlyTrashed(array $conditions = [], ?array $fields = null, array $relations = [])` | Get only soft-deleted records |
 
-### 📊 Paginate
+### 📊 Pagination
 
 | Method | Description |
 |--------|-------------|
-| `paginate(int $perPage = 15, array $conditions = [], ?array $fields = null, array $relations = [])` | Paginated list with filters and relationships |
+| `paginate(int $perPage = 15, array $conditions = [], ?array $fields = null, array $relations = [])` | Laravel paginated list with filters and relationships |
+| `paginateCustom(array $conditions = [], ?array $fields = null, array $relations = [], array\|string\|null $orderBy = null, int $page = 1, int $limit = 10)` | Custom pagination returning array with data, current_page, per_page, total, last_page |
+
+### 📈 Aggregate Methods
+
+| Method | Description |
+|--------|-------------|
+| `countBy(array $conditions = []): int` | Count records by conditions |
+| `sum(string $column, array $conditions = []): float\|int` | Sum a column value with optional conditions |
+| `avg(string $column, array $conditions = []): ?float` | Average of a column value |
+| `max(string $column, array $conditions = []): float\|int\|null` | Maximum value of a column |
+| `min(string $column, array $conditions = []): float\|int\|null` | Minimum value of a column |
+
+### 🔧 Utility Methods
+
+| Method | Description |
+|--------|-------------|
+| `pluck(string $column, ?string $key = null, array $conditions = [])` | Pluck values from a column |
+| `chunk(int $count, callable $callback, array $conditions = []): bool` | Process records in chunks |
+| `increment(string $column, int $amount = 1, array $conditions = [], array $extra = []): int` | Increment column value |
+| `decrement(string $column, int $amount = 1, array $conditions = [], array $extra = []): int` | Decrement column value |
 
 ### ✅ Existence Checks
 
@@ -311,123 +285,243 @@ All services extend `BaseService` and automatically gain access to these common 
 | `existsBy(string $field, $value): bool` | Check if a value exists for a field |
 | `existsByAttributes(array $conditions): bool` | Check existence by multiple attributes |
 
-### 📝 Create/Update
+### 📝 Create/Update Methods
 
 | Method | Description |
 |--------|-------------|
 | `create(array $data)` | Create a new record |
 | `update($id, array $data)` | Update by ID |
-| `updateFields($model, array $fields, array $except = [])` | Update specific fields on a model |
-| `createOrUpdate(array $attributes, array $values = [], array $checkFields = [])` | Create or update a record by match conditions |
+| `updateFields($model, array $fields, array $except = [])` | Update specific fields on a model instance |
+| `firstOrCreate(array $attributes, array $values = [], array $relations = [])` | Find or create a record, returns `[Model, bool $wasCreated]` |
+| `firstOrNew(array $attributes, array $values = [], array $relations = [])` | Find or instantiate (without saving), returns `[Model, bool $isNew]` |
+| `createOrUpdate(array $attributes, array $values = [], ?array $checkFields = null)` | Create or update with field tracking, returns `[Model, bool $wasCreated, bool $wasUpdated, array $changedFields]` |
+| `updateOrCreate(array $attributes, array $values = [], array $relations = [])` | Find and update or create, returns `[Model, bool $wasCreated]` |
 
-### ❌ Delete / Restore
+### ❌ Delete / Restore Methods
 
 | Method | Description |
 |--------|-------------|
 | `delete($id)` | Soft delete by ID |
-| `deleteBy(array $conditions)` | Soft delete by conditions |
+| `deleteBy(array $conditions): int` | Delete by conditions, returns number of deleted records |
 | `restore($id): bool` | Restore soft-deleted record |
 | `forceDelete($id): bool` | Permanently delete record |
 
 ---
 
-<h2 id="service-usage-example">🧠 Service Usage Example</h2>
+<h2 id="baseservice-methods">🧠 BaseService Methods</h2>
 
-```php
-use App\Services\UserService;
+All services extend `BaseService` and delegate to the repository methods. The service layer is where you implement business logic on top of the repository.
 
-class PostService extends BaseService
-{
-    public function __construct(protected UserService $userService) {}
-
-    protected function getRepository()
-    {
-        return $this->postRepo;
-    }
-
-    public function assignAuthor($postId, $userId)
-    {
-        $user = $this->userService->find($userId);
-        $post = $this->find($postId);
-        $post->author_id = $user->id;
-        $post->save();
-
-        return $post;
-    }
-}
-```
-
-### Controller:
-
-```php
-use App\Services\PostService;
-
-class PostController extends Controller
-{
-    public function __construct(protected PostService $postService) {}
-
-    public function index()
-    {
-        return $this->postService->getAll();
-    }
-}
-```
+Services have access to all BaseRepository methods through their repository instance. You can add custom business logic methods in your service classes.
 
 ---
 
+<h2 id="advanced-query-conditions">🔍 Advanced Query Conditions</h2>
+
+The `BaseRepository` supports flexible query conditions for both Eloquent and MongoDB.
+
+### 1️⃣ Simple Conditions
+
+```php
+$conditions = [
+    'status' => 'active',
+    'user_id' => 123
+];
+
+$posts = $postRepo->getByAttributes($conditions);
+```
+
+### 2️⃣ Comparison Operators
+
+```php
+$conditions = [
+    'price' => ['>=', 100],
+    'stock' => ['<', 50],
+    'rating' => ['>', 4.5]
+];
+
+$products = $productRepo->getByAttributes($conditions);
+```
+
+### 3️⃣ MongoDB Operators
+
+```php
+// Using MongoDB $gte, $lte operators
+$conditions = [
+    'expired_at' => [
+        '$gte' => now(),
+        '$lte' => now()->addDays(30)
+    ]
+];
+
+// Using MongoDB $elemMatch for array fields
+$conditions = [
+    'tags' => [
+        '$elemMatch' => ['name' => 'Laravel', 'type' => 'framework']
+    ]
+];
+```
+
+### 4️⃣ Date Range Queries
+
+```php
+// Using from/to syntax
+$conditions = [
+    'created_at' => [
+        'from' => now()->subDays(7),
+        'to' => now()
+    ]
+];
+
+// Using min/max syntax
+$conditions = [
+    'price' => [
+        'min' => 100,
+        'max' => 1000
+    ]
+];
+
+// Using between operator
+$conditions = [
+    'age' => ['between', [18, 65]]
+];
+```
+
+### 5️⃣ IN / NOT IN Queries
+
+```php
+$conditions = [
+    'status' => ['in', ['active', 'pending', 'processing']],
+    'category_id' => ['not_in', [5, 10, 15]]
+];
+```
+
+### 6️⃣ NULL Checks
+
+```php
+$conditions = [
+    'deleted_at' => ['null'],
+    'email_verified_at' => ['not_null']
+];
+```
+
+### 7️⃣ Combined Complex Queries
+
+```php
+$conditions = [
+    'status' => 'active',
+    'price' => [
+        '$gte' => 100,
+        '$lte' => 1000
+    ],
+    'category_id' => ['in', [1, 2, 3]],
+    'created_at' => [
+        'from' => now()->subMonth(),
+        'to' => now()
+    ],
+    'tags' => [
+        '$elemMatch' => ['featured' => true]
+    ]
+];
+
+$products = $productRepo->getByAttributes(
+    conditions: $conditions,
+    fields: ['id', 'name', 'price'],
+    relations: ['category', 'images'],
+    orderBy: ['created_at' => 'desc']
+);
+```
+
+### 8️⃣ Ordering Results
+
+```php
+// Simple ordering (string)
+$orderBy = 'created_at'; // defaults to 'asc'
+
+// Single field ordering (array)
+$orderBy = ['created_at' => 'desc'];
+
+// Multiple field ordering
+$orderBy = [
+    'status' => 'asc',
+    'created_at' => 'desc'
+];
+
+// Alternative syntax with indexed arrays
+$orderBy = [
+    ['status', 'asc'],
+    ['created_at', 'desc']
+];
+```
+
+### Real-World Examples
+
+#### Get Active Products Expiring Soon
+```php
+$products = $productRepo->getByAttributes([
+    'status' => 'active',
+    'expired_at' => [
+        '$gte' => now(),
+        '$lte' => now()->addDays(30)
+    ]
+], orderBy: ['expired_at' => 'asc']);
+```
+
+#### Get Orders from Last Month in Price Range
+```php
+$orders = $orderRepo->getByAttributes([
+    'total_amount' => [
+        'min' => 1000,
+        'max' => 5000
+    ],
+    'created_at' => [
+        'from' => now()->subMonth()->startOfMonth(),
+        'to' => now()->subMonth()->endOfMonth()
+    ],
+    'status' => ['in', ['completed', 'shipped']]
+], relations: ['user', 'items']);
+```
+
+#### MongoDB Array Query with Tags
+```php
+$posts = $postRepo->getByAttributes([
+    'published' => true,
+    'tags' => [
+        '$elemMatch' => [
+            'name' => 'Laravel',
+            'type' => 'framework'
+        ]
+    ],
+    'views' => ['>=', 1000]
+], orderBy: ['views' => 'desc']);
+```
 <h2 id="folder-structure">📁 Folder Structure</h2>
 
 ```
 app/
 ├── Repositories/
 │   ├── Contracts/
-│   │   └── BaseRepositoryInterface.php
-│   │   └── UserRepositoryInterface.php
+│   │   ├── BaseRepositoryInterface.php
+│   │   ├── UserRepositoryInterface.php
 │   │   └── PostRepositoryInterface.php
-│   └── Eloquent/
-│       └── BaseRepository.php
-│       └── UserRepository.php
-│       └── PostRepository.php
+│   ├── BaseRepository.php
+│   ├── UserRepository.php
+│   └── PostRepository.php
 ├── Services/
 │   ├── Contracts/
-│   │   └── BaseServiceInterface.php
-│   │   └── CustomServiceInterface.php
+│   │   ├── BaseServiceInterface.php
+│   │   ├── CustomServiceInterface.php
+│   │   ├── UserServiceInterface.php
 │   │   └── PostServiceInterface.php
-│   │   └── BaseServiceInterface.php
 │   ├── BaseService.php
-│   └── CustomService.php
-│   └── UserService.php
+│   ├── CustomService.php
+│   ├── UserService.php
 │   └── PostService.php
 └── Models/
-    └── User.php
-    └── Post.php    
+    ├── User.php
+    └── Post.php
 ```
----
 
-
-## 🧩 Extending BaseService
-You can override or extend any of these methods in your custom service classes.
-
----
-
-<h2 id="donate">💖 Donate</h2>
-If you find this package useful, feel free to support the development:
-
-### ☕ Coffee & Support
-
-* [https://coff.ee/xuancuong2f](https://coff.ee/xuancuong2f)
-* [https://paypal.me/cuongnx91](https://paypal.me/cuongnx91)
-
-### 🏦 Bank (VIETQR)
-
-> ![QR Code Techcombank](https://img.vietqr.io/image/970407-1368686856-print.png?accountName=Nguyen%20Xuan%20Cuong)
->
-> **Account Holder**: NGUYEN XUAN CUONG  
-> **Account Number**: `1368686856`  
-> **Bank**: Techcombank
-
-
----
 
 <h2 id="contact">📬 Contact</h2>
 

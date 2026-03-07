@@ -6,11 +6,16 @@ use CuongNX\RepoServiceGenerator\Base\Contracts\BaseRepositoryInterface;
 
 abstract class BaseRepository implements BaseRepositoryInterface
 {
-    protected $model;
+    protected string $model;
+
+    protected function query()
+    {
+        return app($this->model)->newQuery();
+    }
 
     public function getAll(array $relations = [], array|string|null $orderBy = null)
     {
-        $query = $this->model;
+        $query = $this->query();
 
         if (!empty($relations)) {
             $query = $query->with($relations);
@@ -22,7 +27,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     public function get(array|null $fields = null, array $relations = [], array|string|null $orderBy = null)
     {
-        $query = $this->model->select($this->normalizeFields($fields));
+        $query = $this->query()->select($this->normalizeFields($fields));
 
         if (!empty($relations)) {
             $query = $query->with($relations);
@@ -34,7 +39,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     public function getBy(string $key, $value, array|null $fields = null, array $relations = [], array|string|null $orderBy = null)
     {
-        $query = $this->model->select($this->normalizeFields($fields))->where($key, $value);
+        $query = $this->query()->select($this->normalizeFields($fields))->where($key, $value);
 
         if (!empty($relations)) {
             $query = $query->with($relations);
@@ -46,7 +51,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     public function getByAttributes(array $conditions, array|null $fields = null, array $relations = [], array|string|null $orderBy = null)
     {
-        $query = $this->applyConditions($this->model, $conditions);
+        $query = $this->applyConditions($this->query(), $conditions);
 
         if (!empty($relations)) {
             $query = $query->with($relations);
@@ -58,7 +63,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     public function find($id, array|null $fields = null, array $relations = [], array|string|null $orderBy = null)
     {
-        $query = $this->model->select($this->normalizeFields($fields));
+        $query = $this->query()->select($this->normalizeFields($fields));
 
         if (!empty($relations)) {
             $query = $query->with($relations);
@@ -70,7 +75,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     public function findBy(string $key, $value, array|null $fields = null, array $relations = [], array|string|null $orderBy = null)
     {
-        $query = $this->model->where($key, $value)->select($this->normalizeFields($fields));
+        $query = $this->query()->where($key, $value)->select($this->normalizeFields($fields));
 
         if (!empty($relations)) {
             $query = $query->with($relations);
@@ -82,7 +87,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     public function findByAttributes(array $conditions, array|null $fields = null, array $relations = [], array|string|null $orderBy = null)
     {
-        $query = $this->applyConditions($this->model, $conditions);
+        $query = $this->applyConditions($this->query(), $conditions);
 
         if (!empty($relations)) {
             $query = $query->with($relations);
@@ -94,69 +99,70 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     public function pluck(string $column, ?string $key = null, array $conditions = [])
     {
-        $query = $this->applyConditions($this->model, $conditions);
+        $query = $this->applyConditions($this->query(), $conditions);
         return $key ? $query->pluck($column, $key) : $query->pluck($column);
     }
 
     public function countBy(array $conditions = []): int
     {
-        $query = $this->applyConditions($this->model, $conditions);
+        $query = $this->applyConditions($this->query(), $conditions);
         return $query->count();
     }
 
     public function sum(string $column, array $conditions = []): float|int
     {
-        return $this->applyConditions($this->model, $conditions)->sum($column);
+        return $this->applyConditions($this->query(), $conditions)->sum($column);
     }
 
     public function avg(string $column, array $conditions = []): ?float
     {
-        return $this->applyConditions($this->model, $conditions)->avg($column);
+        return $this->applyConditions($this->query(), $conditions)->avg($column);
     }
 
     public function max(string $column, array $conditions = []): float|int|null
     {
-        return $this->applyConditions($this->model, $conditions)->max($column);
+        return $this->applyConditions($this->query(), $conditions)->max($column);
     }
 
     public function min(string $column, array $conditions = []): float|int|null
     {
-        return $this->applyConditions($this->model, $conditions)->min($column);
+        return $this->applyConditions($this->query(), $conditions)->min($column);
     }
 
     public function increment(string $column, int $amount = 1, array $conditions = [], array $extra = []): int
     {
-        return $this->applyConditions($this->model, $conditions)->increment($column, $amount, $extra);
+        return $this->applyConditions($this->query(), $conditions)->increment($column, $amount, $extra);
     }
 
     public function decrement(string $column, int $amount = 1, array $conditions = [], array $extra = []): int
     {
-        return $this->applyConditions($this->model, $conditions)->decrement($column, $amount, $extra);
+        return $this->applyConditions($this->query(), $conditions)->decrement($column, $amount, $extra);
     }
 
     public function chunk(int $count, callable $callback, array $conditions = []): bool
     {
-        return $this->applyConditions($this->model, $conditions)->chunk($count, $callback);
+        return $this->applyConditions($this->query(), $conditions)->chunk($count, $callback);
     }
 
     public function existsBy(string $field, $value): bool
     {
-        return $this->model->where($field, $value)->exists();
+        return $this->query()->where($field, $value)->exists();
     }
 
     public function existsByAttributes(array $conditions): bool
     {
-        $query = $this->applyConditions($this->model, $conditions);
+        $query = $this->applyConditions($this->query(), $conditions);
         return $query->exists();
     }
 
-    public function paginate(int $perPage = 15, array $conditions = [], array|null $fields = null, array $relations = [])
+    public function paginate(int $perPage = 15, array $conditions = [], array|null $fields = null, array $relations = [], array|string|null $orderBy = null)
     {
-        $query = $this->applyConditions($this->model, $conditions);
+        $query = $this->applyConditions($this->query(), $conditions);
 
         if (!empty($relations)) {
             $query = $query->with($relations);
         }
+        $query = $this->applyOrder($query, $orderBy);
 
         return $query->select($this->normalizeFields($fields))->paginate($perPage);
     }
@@ -180,7 +186,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
         int $page = 1,
         int $limit = 10
     ): array {
-        $query = $this->applyConditions($this->model, $conditions)
+        $query = $this->applyConditions($this->query(), $conditions)
             ->select($this->normalizeFields($fields));
 
         if (!empty($relations)) {
@@ -189,7 +195,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
         $query = $this->applyOrder($query, $orderBy);
 
-        $total = $query->count();
+        $total = (clone $query)->count();
         $offset = ($page - 1) * $limit;
 
         $data = $query->skip($offset)
@@ -209,12 +215,12 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     public function create(array $data)
     {
-        return $this->model->create($data);
+        return app($this->model)->create($data);
     }
 
     public function update($id, array $data)
     {
-        $item = $this->find($id);
+        $item = $this->query()->find($id);
         return $item && $item->update($data) ? $item : false;
     }
 
@@ -259,7 +265,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
      */
     public function firstOrCreate(array $attributes, array $values = [], array $relations = [])
     {
-        $query = $this->model;
+        $query = $this->query();
 
         if (!empty($relations)) {
             $query = $query->with($relations);
@@ -281,7 +287,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
      */
     public function firstOrNew(array $attributes, array $values = [], array $relations = [])
     {
-        $query = $this->model;
+        $query = $this->query();
 
         if (!empty($relations)) {
             $query = $query->with($relations);
@@ -303,7 +309,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
      */
     public function createOrUpdate(array $attributes, array $values = [], array|null $checkFields = null): array
     {
-        $model = $this->model->firstOrNew($attributes);
+        $model = $this->query()->firstOrNew($attributes);
         $wasRecentlyCreated = !$model->exists;
 
         $model->fill($values);
@@ -333,7 +339,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
      */
     public function updateOrCreate(array $attributes, array $values = [], array $relations = [])
     {
-        $query = $this->model;
+        $query = $this->query();
 
         if (!empty($relations)) {
             $query = $query->with($relations);
@@ -353,12 +359,12 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     public function deleteBy(array $conditions): int
     {
-        return $this->model->where($conditions)->delete();
+        return $this->applyConditions($this->query(), $conditions)->delete();
     }
 
     public function withTrashed(array $conditions = [], array|null $fields = null, array $relations = [])
     {
-        $query = $this->applyConditions($this->model->withTrashed(), $conditions);
+        $query = $this->applyConditions($this->query()->withTrashed(), $conditions);
 
         if (!empty($relations)) {
             $query = $query->with($relations);
@@ -369,7 +375,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     public function onlyTrashed(array $conditions = [], array|null $fields = null, array $relations = [])
     {
-        $query = $this->applyConditions($this->model->onlyTrashed(), $conditions);
+        $query = $this->applyConditions($this->query()->onlyTrashed(), $conditions);
 
         if (!empty($relations)) {
             $query = $query->with($relations);
@@ -380,13 +386,13 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     public function restore($id): bool
     {
-        $item = $this->model->withTrashed()->find($id);
+        $item = $this->query()->withTrashed()->find($id);
         return $item ? $item->restore() : false;
     }
 
     public function forceDelete($id): bool
     {
-        $item = $this->model->withTrashed()->find($id);
+        $item = $this->query()->withTrashed()->find($id);
         return $item ? $item->forceDelete() : false;
     }
 

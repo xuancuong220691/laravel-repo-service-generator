@@ -10,6 +10,6 @@ class {{model}}Repository extends BaseRepository implements {{model}}RepositoryI
 {
     public function __construct()
     {
-        $this->model = new {{model}}();
+        $this->model = {{model}}::class;
     }
 }

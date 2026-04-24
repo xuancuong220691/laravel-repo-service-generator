@@ -1,0 +1,11 @@
+<?php
+
+namespace App\Services;
+
+use App\Services\Contracts\BaseServiceInterface;
+use CuongNX\RepoServiceGenerator\Base\BaseService as LibBaseService;
+
+abstract class BaseService extends LibBaseService implements BaseServiceInterface
+{
+    // Override library methods or add shared service logic here
+}

@@ -19,11 +19,11 @@ interface BaseRepositoryInterface
     public function min(string $column, array $conditions = []): float|int|null;
     public function increment(string $column, int $amount = 1, array $conditions = [], array $extra = []): int;
     public function decrement(string $column, int $amount = 1, array $conditions = [], array $extra = []): int;
-    public function chunk(int $count, callable $callback, array $conditions = []);
-    public function existsBy(string $field, $value);
-    public function existsByAttributes(array $conditions);
-    public function paginate(int $perPage = 15, array $conditions = [], array|null $fields = null, array $relations = []);
-    public function paginateCustom(array $conditions = [], ?array $fields = null, array $relations = [], array|string|null $orderBy = null, int $page = 1, int $limit = 10);
+    public function chunk(int $count, callable $callback, array $conditions = []): bool;
+    public function existsBy(string $field, $value): bool;
+    public function existsByAttributes(array $conditions): bool;
+    public function paginate(int $perPage = 15, array $conditions = [], array|null $fields = null, array $relations = [], array|string|null $orderBy = null);
+    public function paginateCustom(array $conditions = [], ?array $fields = null, array $relations = [], array|string|null $orderBy = null, int $page = 1, int $limit = 10): array;
     public function create(array $data);
     public function update($id, array $data);
     public function updateFields($model, array $fields, array $except = []): mixed;
@@ -37,4 +37,5 @@ interface BaseRepositoryInterface
     public function onlyTrashed(array $conditions = [], array|null $fields = null, array $relations = []);
     public function restore($id): bool;
     public function forceDelete($id): bool;
+    public function transaction(callable $callback): mixed;
 }

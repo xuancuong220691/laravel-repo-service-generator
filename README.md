@@ -10,7 +10,7 @@ This library provides a powerful artisan command set to generate and manage Repo
 
 ## 🧾 Version Information
 
-|**Library Version** | v1.0.0                                         |
+|**Library Version** | v1.1.0                                         |
 | ------------------- | ---------------------------------------------- |
 | **Laravel**         | ^11.0, ^12.0                                   |
 | **PHP Version**     | >= 8.1                                         |
@@ -22,27 +22,29 @@ This library provides a powerful artisan command set to generate and manage Repo
 
 - [Features](#features)
 - [Installation](#installation)
+- [Generate Base Classes](#generate-base-classes)
 - [Full Structure Generation](#create-full-structure-model--repo--service)
 - [Create Simple Service](#create-simple-service-interface)
 - [Bindings](#bindings)
 - [Unbind](#unbind-bindings)
 - [Remove Structures](#remove-structures)
+- [Subdirectory Support](#subdirectory-support)
 - [BaseRepository Methods](#baserepository-methods)
 - [BaseService Methods](#baseservice-methods)
 - [Advanced Query Conditions](#advanced-query-conditions)
 - [Folder Structure](#folder-structure)
 
-
 ---
 
-<h2 id="features">⚙️ ✅ Features</h2>
+<h2 id="features">⚙️ Features</h2>
 
 - Generate Repository, Service, Interface automatically.
 - Optional Model generation (Eloquent or MongoDB).
 - Auto-bind/unbind to `AppServiceProvider`.
-- Middleware-safe service usage.
+- Subdirectory/nested folder support (e.g. `Pay/Transaction`).
+- Generate App-level base classes for easy extension.
+- `transaction()` support via DB facade.
 - Reversible file generation (remove struct).
-- Extendable base classes.
 - Fast CLI operations.
 
 ---
@@ -61,6 +63,41 @@ composer require mongodb/laravel-mongodb
 
 ---
 
+<h2 id="generate-base-classes">🏗️ Generate Base Classes</h2>
+
+```bash
+php artisan cuongnx:make-base
+```
+
+Generates App-level base classes that **extend** the library's base classes, so you can add custom methods or override behavior without modifying the vendor code.
+
+### Options:
+
+| Flag             | Description              |
+| ---------------- | ------------------------ |
+| `--f`, `--force` | Overwrite existing files |
+
+### Generated files:
+
+```
+app/
+├── Repositories/
+│   ├── Contracts/
+│   │   └── BaseRepositoryInterface.php   ← extends lib BaseRepositoryInterface
+│   └── Eloquent/
+│       └── BaseRepository.php            ← extends lib BaseRepository
+└── Services/
+    ├── Contracts/
+    │   └── BaseServiceInterface.php      ← extends lib BaseServiceInterface
+    └── BaseService.php                   ← extends lib BaseService
+```
+
+Once these files exist, all subsequently generated repositories and services will **automatically extend your App-level base** instead of the library's base. This allows you to add shared methods across your entire project.
+
+> ⚠️ Run `cuongnx:make-base` **before** generating your first struct for best results.
+
+---
+
 <h2 id="create-full-structure-model--repo--service">🧱 Create Full Structure (Model + Repo + Service)</h2>
 
 ```bash
@@ -71,7 +108,7 @@ php artisan cuongnx:make-struct Post
 
 | Flag             | Description                                         |
 | ---------------- | --------------------------------------------------- |
-| `--model`, `--m`  | Also generate the model class                       |
+| `--model`, `--m` | Also generate the model class                       |
 | `--type=`        | Model type: `d` = Eloquent (default), `m` = MongoDB |
 | `--no-bind`      | Skip automatic binding in `AppServiceProvider`      |
 | `--f`, `--force` | Overwrite existing files                            |
@@ -82,7 +119,7 @@ php artisan cuongnx:make-struct Post
 php artisan cuongnx:make-struct Product --m --type=m
 ```
 
-This command will generate the following files and structure:
+This command generates the following files:
 
 ```
 app/
@@ -91,38 +128,20 @@ app/
 ├── Repositories/
 │   ├── Contracts/
 │   │   └── PostRepositoryInterface.php
-│   └── PostRepository.php
+│   └── Eloquent/
+│       └── PostRepository.php
 └── Services/
     ├── Contracts/
     │   └── PostServiceInterface.php
     └── PostService.php
 ```
 
-### File Descriptions:
-
-- `app/Models/Post.php`  
-  → The Eloquent or MongoDB model class for `Post`.
-
-- `app/Repositories/Contracts/PostRepositoryInterface.php`  
-  → Interface defining methods specific to the `Post` repository.
-
-- `app/Repositories/PostRepository.php`  
-  → Repository class implementing data access logic for `Post`.  
-  Extends `BaseRepository` and implements `PostRepositoryInterface`.
-
-- `app/Services/Contracts/PostServiceInterface.php`  
-  → Interface defining service-level business methods for `Post`.
-
-- `app/Services/PostService.php`  
-  → Service class implementing business logic related to `Post`.  
-  Extends `BaseService` and implements `PostServiceInterface`.
-
 📌 If `--no-bind` is not provided, the following bindings will be added to `AppServiceProvider`:
 
 ```php
 $this->app->bind(
     \App\Repositories\Contracts\PostRepositoryInterface::class,
-    \App\Repositories\PostRepository::class
+    \App\Repositories\Eloquent\PostRepository::class
 );
 
 $this->app->bind(
@@ -133,7 +152,9 @@ $this->app->bind(
 
 ---
 
-<h2 id="create-simple-service-interface">🧱 Create Simple Service & Interface (Without implement BaseService)</h2>
+<h2 id="create-simple-service-interface">🧱 Create Simple Service & Interface</h2>
+
+Creates a standalone service without a repository — useful for business logic that doesn't need direct database access.
 
 ```bash
 php artisan cuongnx:make-service Custom
@@ -141,12 +162,12 @@ php artisan cuongnx:make-service Custom
 
 ### Options:
 
-| Flag             | Description                                         |
-| ---------------- | --------------------------------------------------- |
-| `--no-bind`      | Skip automatic binding in `AppServiceProvider`      |
-| `--f`, `--force` | Overwrite existing files                            |
+| Flag             | Description                                    |
+| ---------------- | ---------------------------------------------- |
+| `--no-bind`      | Skip automatic binding in `AppServiceProvider` |
+| `--f`, `--force` | Overwrite existing files                       |
 
-This command will generate the following files and structure:
+Generated files:
 
 ```
 app/
@@ -156,17 +177,10 @@ app/
     └── CustomService.php
 ```
 
-### File Descriptions:
-
-- `app/Services/Contracts/CustomServiceInterface.php`  
-  → Defines custom methods for your `Custom` service logic.
-
-- `app/Services/CustomService.php`  
-  → Contains business logic related to `Custom`, implements `CustomServiceInterface`.
-
 ---
 
 <h2 id="bindings">🔌 Bindings</h2>
+
 Bind both repository & service:
 
 ```bash
@@ -190,6 +204,7 @@ php artisan cuongnx:bind-service User
 ---
 
 <h2 id="unbind-bindings">❌ Unbind Bindings</h2>
+
 ```bash
 php artisan cuongnx:unbind-model User
 ```
@@ -205,15 +220,14 @@ Or directly:
 
 ```bash
 php artisan cuongnx:unbind-repo User
-```
-```bash
 php artisan cuongnx:unbind-service User
 ```
 
 ---
 
 <h2 id="remove-structures">🧹 Remove Structures</h2>
-Remove all (repo + service + optional model):
+
+Remove all generated files (repo + service + optional model):
 
 ```bash
 php artisan cuongnx:remove-struct Post --model
@@ -234,6 +248,53 @@ php artisan cuongnx:remove-service Post
 
 ---
 
+<h2 id="subdirectory-support">📂 Subdirectory Support</h2>
+
+All commands support nested folder structure using `/` as separator. This is useful for grouping related models under a domain or module.
+
+```bash
+php artisan cuongnx:make-struct Pay/Transaction --m
+php artisan cuongnx:make-service Pay/Notification
+php artisan cuongnx:bind-model Pay/Transaction
+php artisan cuongnx:unbind-model Pay/Transaction
+php artisan cuongnx:remove-struct Pay/Transaction
+```
+
+For `Pay/Transaction`, the generated structure is:
+
+```
+app/
+├── Models/
+│   └── Pay/
+│       └── Transaction.php
+├── Repositories/
+│   ├── Contracts/
+│   │   └── Pay/
+│   │       └── TransactionRepositoryInterface.php
+│   └── Eloquent/
+│       └── Pay/
+│           └── TransactionRepository.php
+└── Services/
+    ├── Contracts/
+    │   └── Pay/
+    │       └── TransactionServiceInterface.php
+    └── Pay/
+        └── TransactionService.php
+```
+
+Bindings use the full namespaced class:
+
+```php
+$this->app->bind(
+    \App\Repositories\Contracts\Pay\TransactionRepositoryInterface::class,
+    \App\Repositories\Eloquent\Pay\TransactionRepository::class
+);
+```
+
+> Supports any depth: `Pay/Gateway/Transaction`, `Admin/Report/Monthly`, etc.
+
+---
+
 <h2 id="baserepository-methods">🗄️ BaseRepository Methods</h2>
 
 All repositories extend `BaseRepository` and automatically gain access to these common data methods.
@@ -243,29 +304,29 @@ All repositories extend `BaseRepository` and automatically gain access to these 
 | Method | Description |
 |--------|-------------|
 | `getAll(array $relations = [], array\|string\|null $orderBy = null)` | Get all records with optional relationships and ordering |
-| `get(?array $fields = null, array $relations = [], array\|string\|null $orderBy = null)` | Get all records with selected fields, relationships, and ordering |
-| `find($id, ?array $fields = null, array $relations = [])` | Find by ID with optional field selection and relationships |
+| `get(?array $fields = null, array $relations = [], array\|string\|null $orderBy = null)` | Get records with selected fields, relationships, and ordering |
+| `find($id, ?array $fields = null, array $relations = [], array\|string\|null $orderBy = null)` | Find by ID with optional field selection and relationships |
 | `findBy(string $key, $value, ?array $fields = null, array $relations = [], array\|string\|null $orderBy = null)` | Find a single record by key-value |
 | `findByAttributes(array $conditions, ?array $fields = null, array $relations = [], array\|string\|null $orderBy = null)` | Find a single record by multiple attributes |
 | `getBy(string $key, $value, ?array $fields = null, array $relations = [], array\|string\|null $orderBy = null)` | Get multiple records by key-value |
 | `getByAttributes(array $conditions, ?array $fields = null, array $relations = [], array\|string\|null $orderBy = null)` | Get multiple records by attributes |
-| `withTrashed(array $conditions = [], ?array $fields = null, array $relations = [])` | Get including soft-deleted records |
-| `onlyTrashed(array $conditions = [], ?array $fields = null, array $relations = [])` | Get only soft-deleted records |
+| `withTrashed(array $conditions = [], ?array $fields = null, array $relations = [])` | Get including soft-deleted records (model must use `SoftDeletes`) |
+| `onlyTrashed(array $conditions = [], ?array $fields = null, array $relations = [])` | Get only soft-deleted records (model must use `SoftDeletes`) |
 
 ### 📊 Pagination
 
 | Method | Description |
 |--------|-------------|
-| `paginate(int $perPage = 15, array $conditions = [], ?array $fields = null, array $relations = [])` | Laravel paginated list with filters and relationships |
-| `paginateCustom(array $conditions = [], ?array $fields = null, array $relations = [], array\|string\|null $orderBy = null, int $page = 1, int $limit = 10)` | Custom pagination returning array with data, current_page, per_page, total, last_page |
+| `paginate(int $perPage = 15, array $conditions = [], ?array $fields = null, array $relations = [], array\|string\|null $orderBy = null)` | Laravel paginated list with filters and relationships |
+| `paginateCustom(array $conditions = [], ?array $fields = null, array $relations = [], array\|string\|null $orderBy = null, int $page = 1, int $limit = 10): array` | Custom pagination returning `['data', 'current_page', 'per_page', 'total', 'last_page']` |
 
 ### 📈 Aggregate Methods
 
 | Method | Description |
 |--------|-------------|
 | `countBy(array $conditions = []): int` | Count records by conditions |
-| `sum(string $column, array $conditions = []): float\|int` | Sum a column value with optional conditions |
-| `avg(string $column, array $conditions = []): ?float` | Average of a column value |
+| `sum(string $column, array $conditions = []): float\|int` | Sum a column |
+| `avg(string $column, array $conditions = []): ?float` | Average of a column |
 | `max(string $column, array $conditions = []): float\|int\|null` | Maximum value of a column |
 | `min(string $column, array $conditions = []): float\|int\|null` | Minimum value of a column |
 
@@ -274,9 +335,10 @@ All repositories extend `BaseRepository` and automatically gain access to these 
 | Method | Description |
 |--------|-------------|
 | `pluck(string $column, ?string $key = null, array $conditions = [])` | Pluck values from a column |
-| `chunk(int $count, callable $callback, array $conditions = []): bool` | Process records in chunks |
+| `chunk(int $count, callable $callback, array $conditions = []): bool` | Process records in chunks; callback returning `false` stops iteration |
 | `increment(string $column, int $amount = 1, array $conditions = [], array $extra = []): int` | Increment column value |
 | `decrement(string $column, int $amount = 1, array $conditions = [], array $extra = []): int` | Decrement column value |
+| `transaction(callable $callback): mixed` | Run a callable inside a database transaction |
 
 ### ✅ Existence Checks
 
@@ -291,11 +353,11 @@ All repositories extend `BaseRepository` and automatically gain access to these 
 |--------|-------------|
 | `create(array $data)` | Create a new record |
 | `update($id, array $data)` | Update by ID |
-| `updateFields($model, array $fields, array $except = [])` | Update specific fields on a model instance |
-| `firstOrCreate(array $attributes, array $values = [], array $relations = [])` | Find or create a record, returns `[Model, bool $wasCreated]` |
-| `firstOrNew(array $attributes, array $values = [], array $relations = [])` | Find or instantiate (without saving), returns `[Model, bool $isNew]` |
-| `createOrUpdate(array $attributes, array $values = [], ?array $checkFields = null)` | Create or update with field tracking, returns `[Model, bool $wasCreated, bool $wasUpdated, array $changedFields]` |
-| `updateOrCreate(array $attributes, array $values = [], array $relations = [])` | Find and update or create, returns `[Model, bool $wasCreated]` |
+| `updateFields($model, array $fields, array $except = [])` | Update specific fillable fields on a model instance |
+| `firstOrCreate(array $attributes, array $values = [], array $relations = [])` | Find or create; returns `[Model, bool $wasCreated]` |
+| `firstOrNew(array $attributes, array $values = [], array $relations = [])` | Find or instantiate without saving; returns `[Model, bool $isNew]` |
+| `createOrUpdate(array $attributes, array $values = [], ?array $checkFields = null): array` | Create or update with field tracking; returns `[Model, bool $wasCreated, bool $wasUpdated, array $changedFields]` |
+| `updateOrCreate(array $attributes, array $values = [], array $relations = [])` | Find and update or create; returns `[Model, bool $wasCreated]` |
 
 ### ❌ Delete / Restore Methods
 
@@ -310,9 +372,27 @@ All repositories extend `BaseRepository` and automatically gain access to these 
 
 <h2 id="baseservice-methods">🧠 BaseService Methods</h2>
 
-All services extend `BaseService` and delegate to the repository methods. The service layer is where you implement business logic on top of the repository.
+All services extend `BaseService` and delegate every method to the underlying repository. The service layer is where you implement business logic on top of the repository.
 
-Services have access to all BaseRepository methods through their repository instance. You can add custom business logic methods in your service classes.
+`BaseService` exposes the same interface as `BaseRepository` — all read, write, aggregate, pagination, and utility methods are available. Additional service-level methods:
+
+| Method | Description |
+|--------|-------------|
+| `transaction(callable $callback): mixed` | Run a callable inside a database transaction (delegates to repository) |
+
+To add custom business logic, define methods in your generated service class:
+
+```php
+class PostService extends BaseService implements PostServiceInterface
+{
+    public function publish(int $id): bool
+    {
+        return $this->transaction(function () use ($id) {
+            return $this->update($id, ['status' => 'published', 'published_at' => now()]);
+        });
+    }
+}
+```
 
 ---
 
@@ -362,7 +442,7 @@ $conditions = [
 ];
 ```
 
-### 4️⃣ Date Range Queries
+### 4️⃣ Range Queries
 
 ```php
 // Using from/to syntax
@@ -387,6 +467,8 @@ $conditions = [
 ];
 ```
 
+> Both `from/to` and `min/max` use `whereBetween()` internally.
+
 ### 5️⃣ IN / NOT IN Queries
 
 ```php
@@ -405,7 +487,22 @@ $conditions = [
 ];
 ```
 
-### 7️⃣ Combined Complex Queries
+### 7️⃣ OR Groups
+
+Use the `'or'` key to group conditions with OR logic:
+
+```php
+$conditions = [
+    'status' => 'active',
+    'or' => [
+        ['role' => 'admin'],
+        ['role' => 'moderator', 'verified' => true],
+    ]
+];
+// WHERE status = 'active' AND (role = 'admin' OR (role = 'moderator' AND verified = 1))
+```
+
+### 8️⃣ Combined Complex Queries
 
 ```php
 $conditions = [
@@ -432,22 +529,25 @@ $products = $productRepo->getByAttributes(
 );
 ```
 
-### 8️⃣ Ordering Results
+### 9️⃣ Ordering Results
 
 ```php
-// Simple ordering (string)
-$orderBy = 'created_at'; // defaults to 'asc'
+// Simple string (defaults to asc)
+$orderBy = 'created_at';
 
-// Single field ordering (array)
+// Single indexed field (defaults to asc)
+$orderBy = ['created_at'];
+
+// Associative array
 $orderBy = ['created_at' => 'desc'];
 
-// Multiple field ordering
+// Multiple fields
 $orderBy = [
     'status' => 'asc',
     'created_at' => 'desc'
 ];
 
-// Alternative syntax with indexed arrays
+// Indexed array of tuples
 $orderBy = [
     ['status', 'asc'],
     ['created_at', 'desc']
@@ -482,38 +582,49 @@ $orders = $orderRepo->getByAttributes([
 ], relations: ['user', 'items']);
 ```
 
-#### MongoDB Array Query with Tags
+#### Process Large Dataset in Chunks
 ```php
-$posts = $postRepo->getByAttributes([
-    'published' => true,
-    'tags' => [
-        '$elemMatch' => [
-            'name' => 'Laravel',
-            'type' => 'framework'
-        ]
-    ],
-    'views' => ['>=', 1000]
-], orderBy: ['views' => 'desc']);
+$stopped = $userRepo->chunk(200, function ($users) {
+    foreach ($users as $user) {
+        if ($user->shouldStop()) {
+            return false; // stops chunking, chunk() returns false
+        }
+        // process...
+    }
+});
 ```
+
+#### Run Operations in a Transaction
+```php
+$result = $orderService->transaction(function () use ($data) {
+    $order = $this->create($data['order']);
+    $this->getRepository()->deleteBy(['cart_id' => $data['cart_id']]);
+    return $order;
+});
+```
+
+---
+
 <h2 id="folder-structure">📁 Folder Structure</h2>
 
 ```
 app/
 ├── Repositories/
 │   ├── Contracts/
-│   │   ├── BaseRepositoryInterface.php
+│   │   ├── BaseRepositoryInterface.php     ← generated by make-base
 │   │   ├── UserRepositoryInterface.php
 │   │   └── PostRepositoryInterface.php
-│   ├── BaseRepository.php
-│   ├── UserRepository.php
-│   └── PostRepository.php
+│   └── Eloquent/
+│       ├── BaseRepository.php              ← generated by make-base
+│       ├── UserRepository.php
+│       └── PostRepository.php
 ├── Services/
 │   ├── Contracts/
-│   │   ├── BaseServiceInterface.php
+│   │   ├── BaseServiceInterface.php        ← generated by make-base
 │   │   ├── CustomServiceInterface.php
 │   │   ├── UserServiceInterface.php
 │   │   └── PostServiceInterface.php
-│   ├── BaseService.php
+│   ├── BaseService.php                     ← generated by make-base
 │   ├── CustomService.php
 │   ├── UserService.php
 │   └── PostService.php
@@ -522,6 +633,7 @@ app/
     └── Post.php
 ```
 
+---
 
 <h2 id="contact">📬 Contact</h2>
 
@@ -532,5 +644,3 @@ app/
 <h2 id="license">📝 License</h2>
 
 * MIT License © [Cuong Nguyen](mailto:xuancuong220691@gmail.com)
-
-

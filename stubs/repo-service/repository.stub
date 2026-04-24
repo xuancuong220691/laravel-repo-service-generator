@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Repositories\Eloquent;
+namespace {{repoImplNamespace}};
 
-use App\Models\{{model}};
-use App\Repositories\Contracts\{{model}}RepositoryInterface;
-use CuongNX\RepoServiceGenerator\Base\BaseRepository;
+use {{modelFqn}};
+use {{repoContractsNamespace}}\{{model}}RepositoryInterface;
+{{baseRepositoryClass}}
 
 class {{model}}Repository extends BaseRepository implements {{model}}RepositoryInterface
 {

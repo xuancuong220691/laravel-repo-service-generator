@@ -20,14 +20,10 @@ class MakeBaseCommand extends Command
         'Services/BaseService.php'                           => 'base/base-service.stub',
     ];
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->initFilesystem();
-    }
-
     public function handle(): int
     {
+        $this->initFilesystem();
+
         $basePath = app_path();
         $force    = ($this->option('force') || $this->option('f'));
 

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services\Contracts;
+namespace {{serviceContractsNamespace}};
 
-use CuongNX\RepoServiceGenerator\Base\Contracts\BaseServiceInterface;
+{{baseServiceInterfaceClass}}
 
 interface {{model}}ServiceInterface extends BaseServiceInterface
 {

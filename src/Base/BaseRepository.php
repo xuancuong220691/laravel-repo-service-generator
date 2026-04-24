@@ -202,7 +202,7 @@ abstract class BaseRepository implements BaseRepositoryInterface
             ->take($limit)
             ->get();
 
-        $lastPage = ceil($total / $limit);
+        $lastPage = $limit > 0 ? (int) ceil($total / $limit) : 1;
 
         return [
             'data' => $data,
@@ -364,6 +364,10 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     public function withTrashed(array $conditions = [], array|null $fields = null, array $relations = [])
     {
+        if (!in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($this->model))) {
+            throw new \RuntimeException("Model [{$this->model}] does not use SoftDeletes.");
+        }
+
         $query = $this->applyConditions($this->query()->withTrashed(), $conditions);
 
         if (!empty($relations)) {
@@ -375,6 +379,10 @@ abstract class BaseRepository implements BaseRepositoryInterface
 
     public function onlyTrashed(array $conditions = [], array|null $fields = null, array $relations = [])
     {
+        if (!in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($this->model))) {
+            throw new \RuntimeException("Model [{$this->model}] does not use SoftDeletes.");
+        }
+
         $query = $this->applyConditions($this->query()->onlyTrashed(), $conditions);
 
         if (!empty($relations)) {
@@ -400,6 +408,18 @@ abstract class BaseRepository implements BaseRepositoryInterface
     protected function applyConditions($query, array $conditions)
     {
         foreach ($conditions as $field => $condition) {
+            // Special key: 'or' => [ [...conditions...], [...conditions...] ]
+            if ($field === 'or' && is_array($condition)) {
+                $query->where(function ($q) use ($condition) {
+                    foreach ($condition as $orGroup) {
+                        $q->orWhere(function ($q2) use ($orGroup) {
+                            $this->applyConditions($q2, $orGroup);
+                        });
+                    }
+                });
+                continue;
+            }
+
             if (!is_array($condition)) {
                 $query->where($field, $condition);
                 continue;
@@ -417,31 +437,28 @@ abstract class BaseRepository implements BaseRepositoryInterface
                 isset($condition['$lte']) || isset($condition['$lt']) ||
                 isset($condition['$ne'])
             ) {
-
                 foreach ($condition as $operator => $value) {
                     $query->where($field, $operator, $value);
                 }
                 continue;
             }
 
-            // 🆕 BETWEEN syntax with min/max
+            // BETWEEN syntax with min/max
             if (isset($condition['min']) && isset($condition['max'])) {
-                $query->where($field, '>=', $condition['min']);
-                $query->where($field, '<=', $condition['max']);
+                $query->whereBetween($field, [$condition['min'], $condition['max']]);
                 continue;
             }
 
-            // 🆕 BETWEEN syntax with from/to
+            // BETWEEN syntax with from/to
             if (isset($condition['from']) && isset($condition['to'])) {
-                $query->where($field, '>=', $condition['from']);
-                $query->where($field, '<=', $condition['to']);
+                $query->whereBetween($field, [$condition['from'], $condition['to']]);
                 continue;
             }
 
             // Indexed array
             if (isset($condition[0])) {
                 $operator = $condition[0];
-                $value = $condition[1] ?? null;
+                $value    = $condition[1] ?? null;
 
                 switch (strtolower($operator)) {
                     case 'in':
@@ -452,10 +469,8 @@ abstract class BaseRepository implements BaseRepositoryInterface
                         $query->whereNotIn($field, $value);
                         break;
                     case 'between':
-                        // $value is array [min, max]
                         if (is_array($value) && count($value) === 2) {
-                            $query->where($field, '>=', $value[0]);
-                            $query->where($field, '<=', $value[1]);
+                            $query->whereBetween($field, $value);
                         }
                         break;
                     case 'not_between':
@@ -499,6 +514,9 @@ abstract class BaseRepository implements BaseRepositoryInterface
                     // [['field', 'desc']]
                     [$column, $dir] = $direction;
                     $query->orderBy($column, $dir);
+                } elseif (is_numeric($key) && is_string($direction)) {
+                    // ['field']
+                    $query->orderBy($direction, 'asc');
                 } else {
                     // ['field' => 'asc']
                     $query->orderBy($key, $direction);
@@ -512,5 +530,10 @@ abstract class BaseRepository implements BaseRepositoryInterface
     protected function normalizeFields(array|null $fields): array
     {
         return is_null($fields) ? ['*'] : $fields;
+    }
+
+    public function transaction(callable $callback): mixed
+    {
+        return \Illuminate\Support\Facades\DB::transaction($callback);
     }
 }

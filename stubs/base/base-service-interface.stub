@@ -1,0 +1,10 @@
+<?php
+
+namespace App\Services\Contracts;
+
+use CuongNX\RepoServiceGenerator\Base\Contracts\BaseServiceInterface as LibBaseServiceInterface;
+
+interface BaseServiceInterface extends LibBaseServiceInterface
+{
+    // Define additional base service methods shared across all services
+}

@@ -4,17 +4,17 @@ namespace CuongNX\RepoServiceGenerator\Commands;
 
 use Illuminate\Console\Command;
 use CuongNX\RepoServiceGenerator\Helpers\BindHelper;
+use CuongNX\RepoServiceGenerator\Helpers\NameHelper;
 use CuongNX\RepoServiceGenerator\Traits\ConsoleOutputTrait;
 use CuongNX\RepoServiceGenerator\Traits\StubTrait;
-use Illuminate\Support\Str;
 
 class MakeSimpleServiceCommand extends Command
 {
     use StubTrait, ConsoleOutputTrait;
 
-    protected $signature = 'cuongnx:make-service 
-                            {name : The name of the service class (no "Service" suffix needed)} 
-                            {--f : Overwrite if exists} {--force : Overwrite if exists} 
+    protected $signature = 'cuongnx:make-service
+                            {name : Service name, supports subdirectory e.g. Pay/Transaction}
+                            {--f : Overwrite if exists} {--force : Overwrite if exists}
                             {--no-bind : Do not bind in AppServiceProvider}';
 
     protected $description = 'Create a simple Service class and optionally bind it to AppServiceProvider.';
@@ -23,34 +23,33 @@ class MakeSimpleServiceCommand extends Command
     {
         $this->initFilesystem();
 
-        $name = Str::studly($this->argument('name'));
+        $ctx   = NameHelper::buildContext($this->argument('name'));
         $force = $this->option('f') || $this->option('force');
         $bind  = !$this->option('no-bind');
-      
-        $this->generateService($name, $force);
+
+        $this->generateService($ctx, $force);
 
         if ($bind) {
             $this->output("👉 Binding into AppServiceProvider", 'info');
-            BindHelper::bindService($name, $this->logCallback());
+            BindHelper::bindService($ctx['model'], $this->logCallback(), $ctx['subNamespace']);
         }
 
-        $this->output("✅ Created Service {$name} successfully.", 'info');
+        $this->output("✅ Created Service {$ctx['displayName']} successfully.", 'info');
     }
 
-    protected function generateService(string $name, bool $force): void
+    protected function generateService(array $ctx, bool $force): void
     {
+        $replacements = [
+            '{{name}}'                       => $ctx['model'],
+            '{{serviceContractsNamespace}}'  => $ctx['serviceContractsNs'],
+            '{{serviceImplNamespace}}'       => $ctx['serviceImplNs'],
+        ];
 
-        $stubInterfacePath = 'simple-service/service-interface.stub';
-        $stubImplPath      = 'simple-service/service.stub';
+        $interfacePath = app_path($ctx['serviceInterfacePath']);
+        $implPath      = app_path($ctx['serviceImplPath']);
 
-        $interfacePath = app_path("Services/Contracts/{$name}ServiceInterface.php");
-        $implPath      = app_path("Services/{$name}Service.php");
-
-        $replacements = ['{{name}}' => $name];
-
-        $this->output("👉 Generating Service for {$name}", 'info');
-        $this->generateFileFromStub($stubInterfacePath, $interfacePath, $replacements, $force, $this->logCallback());
-        $this->generateFileFromStub($stubImplPath, $implPath, $replacements, $force, $this->logCallback());
+        $this->output("👉 Generating Service for {$ctx['displayName']}", 'info');
+        $this->generateFileFromStub('simple-service/service-interface.stub', $interfacePath, $replacements, $force, $this->logCallback());
+        $this->generateFileFromStub('simple-service/service.stub',           $implPath,      $replacements, $force, $this->logCallback());
     }
-
 }

@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Services;
+namespace {{serviceImplNamespace}};
 
-use App\Repositories\Contracts\{{model}}RepositoryInterface;
-use App\Services\Contracts\{{model}}ServiceInterface;
-use CuongNX\RepoServiceGenerator\Base\BaseService;
+use {{repoContractsNamespace}}\{{model}}RepositoryInterface;
+use {{serviceContractsNamespace}}\{{model}}ServiceInterface;
+{{baseServiceClass}}
 
 class {{model}}Service extends BaseService implements {{model}}ServiceInterface
 {

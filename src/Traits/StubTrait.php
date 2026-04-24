@@ -20,8 +20,10 @@ trait StubTrait
         $stub = __DIR__ . '/../../stubs/' . $relativePath;
 
         if (!$this->files->exists($stub)) {
-            $outputHandler("❌ Stub not found: {$stub}", 'error');
-            exit(1);
+            if ($outputHandler) {
+                $outputHandler("❌ Stub not found: {$stub}", 'error');
+            }
+            throw new \RuntimeException("Stub not found: {$stub}");
         }
 
         return $this->files->get($stub);

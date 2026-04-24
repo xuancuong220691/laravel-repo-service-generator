@@ -1,0 +1,10 @@
+<?php
+
+namespace App\Repositories\Contracts;
+
+use CuongNX\RepoServiceGenerator\Base\Contracts\BaseRepositoryInterface as LibBaseRepositoryInterface;
+
+interface BaseRepositoryInterface extends LibBaseRepositoryInterface
+{
+    // Define additional base repository methods shared across all repositories
+}

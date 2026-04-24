@@ -84,7 +84,7 @@ abstract class BaseService implements BaseServiceInterface
         return $this->getRepository()->decrement($column, $amount, $conditions, $extra);
     }
 
-    public function chunk(int $count, callable $callback, array $conditions = [])
+    public function chunk(int $count, callable $callback, array $conditions = []): bool
     {
         return $this->getRepository()->chunk($count, $callback, $conditions);
     }
@@ -99,9 +99,9 @@ abstract class BaseService implements BaseServiceInterface
         return $this->getRepository()->existsByAttributes($conditions);
     }
 
-    public function paginate(int $perPage = 15, array $conditions = [], ?array $fields = null, array $relations = [])
+    public function paginate(int $perPage = 15, array $conditions = [], ?array $fields = null, array $relations = [], array|string|null $orderBy = null)
     {
-        return $this->getRepository()->paginate($perPage, $conditions, $fields, $relations);
+        return $this->getRepository()->paginate($perPage, $conditions, $fields, $relations, $orderBy);
     }
 
     public function paginateCustom(array $conditions = [], ?array $fields = null, array $relations = [], array|string|null $orderBy = null, int $page = 1, int $limit = 10)
@@ -172,5 +172,10 @@ abstract class BaseService implements BaseServiceInterface
     public function forceDelete($id): bool
     {
         return $this->getRepository()->forceDelete($id);
+    }
+
+    public function transaction(callable $callback): mixed
+    {
+        return $this->getRepository()->transaction($callback);
     }
 }
